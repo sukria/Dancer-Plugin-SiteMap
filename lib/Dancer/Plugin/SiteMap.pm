@@ -1,7 +1,8 @@
 package Dancer::Plugin::SiteMap;
 
 use strict;
-use Dancer qw(:syntax);
+use warnings;
+
 use Dancer::Plugin;
 use XML::Simple;
 
@@ -22,9 +23,6 @@ my  $OMIT_ROUTES = [];
 register 'sitemap_ignore' => sub {
     $Dancer::Plugin::SiteMap::OMIT_ROUTES = \@_;
 };
-
-# Add this plugin to Dancer
-register_plugin;
 
 
 # Add the routes for both the XML sitemap and the standalone one.
@@ -118,25 +116,25 @@ sub _xml_sitemap {
 sub _retreive_get_urls {
     my ($route, @urls);
 
-    for my $app ( Dancer::App->applications ) {
-        my $routes = $app->{registry}->{routes};
+    for my $app ( @{ runner->server->apps } ) {
+        my $routes = $app->routes;
         
         # push the static get routes into an array.
         get_route:
         for my $get_route ( @{ $routes->{get} } ) {
-            if (ref($get_route->{pattern}) !~ m/HASH/i) {
+            if (ref($get_route->regexp) !~ m/HASH/i) {
                 
                 # If the pattern is a true comprehensive regexp or the route
                 # has a :variable element to it, then omit it.
-                next get_route if ($get_route->{pattern} =~ m/[()[\]|]|:\w/);
+                next get_route if ($get_route->regexp =~ m/[()[\]|]|:\w/);
               
                 # If there is a wildcard modifier, then drop it and have the 
                 # full route.
-                $get_route->{pattern} =~ s/\?//g;
+                $get_route->regexp =~ s/\?//g;
 
                 # Other than that, its cool to be added.
-                push (@urls, $get_route->{pattern}) 
-                    if ! grep { $get_route->{pattern} =~ m/$_/i } 
+                push (@urls, $get_route->regexp) 
+                    if ! grep { $get_route->regexp =~ m/$_/i } 
                               @$Dancer::Plugin::SiteMap::OMIT_ROUTES; 
             }
         }
@@ -200,5 +198,8 @@ See http://dev.perl.org/licenses/ for more information.
 
 
 =cut
+
+# Add this plugin to Dancer
+register_plugin;
 
 1; # End of Dancer::Plugin::SiteMap
