@@ -122,23 +122,16 @@ sub _retreive_get_urls {
         # push the static get routes into an array.
         get_route:
         for my $get_route ( @{ $routes->{get} } ) {
-            my $regexp = $get_route->regexp;
-            if (ref($regexp) !~ m/HASH/i) {
+            my $route = $get_route->spec_route;
+            if (ref($route) !~ m/HASH/i) {
                 
-                # If the pattern is a true comprehensive regexp or the route
+                # If the pattern is a true comprehensive route or the route
                 # has a :variable element to it, then omit it.
-                next get_route if ($regexp =~ m/[()[\]|]|:\w/);
+                next get_route if ($route =~ m/[()[\]|]|:\w/);
               
-                # If there is a wildcard modifier, then drop it and have the 
-                # full route.
-                $regexp =~ s/\?//g;
-                $regexp =~ s/\\//g;
-                $regexp =~ s/^\^//g;
-                $regexp =~ s/\$$//g;
-
                 # Other than that, its cool to be added.
-                push (@urls, $regexp) 
-                    if ! grep { $regexp =~ m/$_/i } 
+                push (@urls, $route) 
+                    if ! grep { $route =~ m/$_/i } 
                               @$Dancer::Plugin::SiteMap::OMIT_ROUTES; 
             }
         }
